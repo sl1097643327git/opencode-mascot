@@ -1,0 +1,181 @@
+:root {
+  --stage-width: 100vw;
+  --stage-height: 100vh;
+  --space-2: 0.25rem;
+  --space-3: 0.5rem;
+  --space-4: 0.75rem;
+  --radius-md: 0.875rem;
+  --label-bg: rgba(8, 12, 20, 0.72);
+  --label-border: rgba(255, 255, 255, 0.18);
+  --label-text: rgba(245, 247, 255, 0.96);
+  --fallback-fill: rgba(126, 162, 255, 0.36);
+  --fallback-stroke: rgba(255, 255, 255, 0.42);
+  --fallback-glow: rgba(126, 162, 255, 0.28);
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: transparent;
+  color: var(--label-text);
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+#mascot-stage {
+  position: relative;
+  width: var(--stage-width);
+  height: var(--stage-height);
+  background: transparent;
+  pointer-events: auto;
+}
+
+.mascot-character {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: grab;
+  touch-action: none;
+}
+
+.mascot-character.is-dragging {
+  cursor: grabbing;
+}
+
+.mascot-character.has-menu {
+  z-index: 1000 !important;
+}
+
+.mascot-character__visual {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  max-width: none;
+}
+
+.mascot-character__image,
+.mascot-character__fallback {
+  width: 100%;
+  height: 100%;
+}
+
+.mascot-character__image {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(var(--shadow-soft));
+}
+
+.mascot-character__fallback {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.78), transparent 18%),
+    radial-gradient(circle at 50% 50%, var(--fallback-fill), rgba(16, 24, 40, 0.12));
+  border: 1px solid var(--fallback-stroke);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 32px var(--fallback-glow);
+}
+
+.mascot-character__label {
+  display: inline-grid;
+  justify-items: center;
+  gap: 0.15rem;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--label-border);
+  border-radius: var(--radius-md);
+  background: var(--label-bg);
+  box-shadow: var(--shadow-soft);
+  line-height: 1.2;
+  font-family: 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.mascot-character__name {
+  font-weight: 700;
+}
+
+.mascot-character__status {
+  color: rgba(214, 222, 240, 0.78);
+  font-size: 0.75rem;
+}
+
+.mascot-character__menu {
+  position: fixed;
+  width: 13rem;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  background: rgba(8, 12, 20, 0.9);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(16px);
+  cursor: default;
+}
+
+.mascot-character__menu-title {
+  color: rgba(255, 222, 128, 0.98);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.mascot-character__menu-detail {
+  max-height: 5.5rem;
+  overflow: auto;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(214, 222, 240, 0.86);
+  font-size: 0.7rem;
+  line-height: 1.45;
+  user-select: text;
+  word-break: break-all;
+}
+
+.mascot-character__menu label {
+  display: grid;
+  gap: var(--space-2);
+  color: rgba(214, 222, 240, 0.9);
+  font-size: 0.75rem;
+}
+
+.mascot-character__menu input,
+.mascot-character__menu select,
+.mascot-character__menu button {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.65rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 247, 255, 0.96);
+  font: inherit;
+}
+
+.mascot-character__menu input[type='range'] {
+  padding-inline: 0;
+}
+
+.mascot-character__menu button {
+  border: 0;
+  background: linear-gradient(135deg, rgba(126, 162, 255, 0.95), rgba(112, 224, 190, 0.95));
+  color: rgba(8, 12, 20, 0.96);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mascot-character__menu button.is-danger {
+  background: linear-gradient(135deg, rgba(255, 116, 116, 0.95), rgba(255, 204, 112, 0.95));
+}
