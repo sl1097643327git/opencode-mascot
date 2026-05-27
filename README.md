@@ -1,6 +1,73 @@
 # opencode-mascot
 
-一个轻量 Electron 桌面看板娘，用本地 HTTP 服务和 opencode 插件把 AI 工作状态显示到桌面上。
+一个把 AI / opencode 工作状态可视化到桌面的轻量 Electron 看板娘工具。它可以作为本地桌面角色独立运行，也可以通过 opencode 插件、CLI 或本地 HTTP API 驱动，让“正在思考、调用工具、等待权限、完成、报错”等状态变成可见的桌面反馈。
+
+适合希望把 AI 工作流变得更直观、更有存在感的人：你可以把它当作一个能动起来的桌面状态面板，也可以把它接入自己的自动化流程、编辑器插件或本地工具链。
+
+## 项目亮点
+
+- **桌面可视化 AI 状态**：把 `idle`、`working`、`thinking`、`typing`、`tool`、`permission`、`done`、`error` 等状态映射成角色动作。
+- **多角色同时显示**：支持多个角色并存，可拖拽、缩放、隐藏/显示，适合区分不同项目或不同来源的状态流。
+- **opencode 自动联动**：插件可为每个 opencode 项目自动创建角色，并跟随事件切换动作。
+- **本地优先、可脚本化控制**：可通过浏览器控制台、CLI 和本地 HTTP API 控制角色，不依赖云服务。
+- **偏好持久化**：名称、位置、大小、主题和部分显示偏好会自动保存。
+
+## 快速入口
+
+### 我想先跑起来
+
+```powershell
+npm install
+npm start
+```
+
+启动后可打开：
+
+```text
+http://127.0.0.1:17890
+```
+
+Windows 也可以直接双击：
+
+```text
+start-mascot.bat
+```
+
+### 我想接入 opencode
+
+先启动看板娘，再安装 opencode 插件：
+
+Windows：
+
+```powershell
+.\install-opencode-plugin.bat
+```
+
+macOS/Linux：
+
+```sh
+chmod +x ./install-opencode-plugin.sh
+./install-opencode-plugin.sh
+```
+
+通用命令：
+
+```sh
+node scripts/install-opencode-plugin.js
+```
+
+安装后重启 opencode，并检查连接状态：
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
+```
+
+## 适合谁
+
+- 想把 AI 助手当前状态直接映射到桌面上的个人开发者。
+- 想为 opencode 项目窗口自动生成角色反馈的人。
+- 想通过本地 HTTP API / CLI 把桌面角色接入自己脚本或工具链的人。
+- 想做一个更有存在感、更容易一眼感知状态的本地 AI 工作环境的人。
 
 ## 功能
 
@@ -18,6 +85,8 @@
 - Windows 已完整测试；macOS/Linux 理论可运行 Electron 和本地 HTTP 服务，但发布前建议在目标平台实测。
 
 ## 安装与启动
+
+如果你只是想尽快启动一次，直接看上面的“快速入口”即可。这里保留完整的基础启动说明。
 
 ```powershell
 npm install
@@ -42,7 +111,7 @@ http://127.0.0.1:17890
 
 适合想让每个 opencode 窗口自动生成项目看板娘，并自动跟随 AI 状态切换动作的人。
 
-1. 先启动看板娘：
+1. 先启动看板娘（如果你已经按顶部“快速入口”做过，这里可以直接跳到下一步）：
 
    ```powershell
    npm install
