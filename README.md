@@ -258,6 +258,22 @@ assets/mascot/default/working/ComfyUI_01131_.png
 
 当前仓库保留 `assets/mascot/default/` 下的默认大图素材，适合直接提交到 GitHub 展示真实效果。`reviewer` 等其他主题可以按同样目录结构自行添加。
 
+## 内置形象预览
+
+当前仓库内置了可直接使用的主题素材。下面用每个主题 `idle` 目录中的一张代表图做静态预览，方便在 GitHub 上快速查看大致风格。
+
+### `default`
+
+默认主题，适合直接开箱即用，也最适合用来验证动作切换、HTTP 控制和 opencode 联动是否工作正常。
+
+![default mascot preview](assets/mascot/default/idle/ComfyUI_01084_.png)
+
+### `succubus`
+
+风格更强、展示感更明显，适合想让桌面角色更有存在感的使用方式。
+
+![succubus mascot preview](assets/mascot/succubus/idle/ComfyUI_01392_.png)
+
 ## 如何添加形象
 
 新增一个主题目录，并按动作状态建立子目录：
