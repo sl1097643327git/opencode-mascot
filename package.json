@@ -1,0 +1,50 @@
+{
+  "name": "opencode-mascot",
+  "version": "0.1.0",
+  "description": "Lightweight multi-character desktop mascot for opencode status feedback.",
+  "main": "src/main.js",
+  "type": "commonjs",
+  "license": "MIT",
+  "author": "",
+  "homepage": "https://github.com/sl1097643327git/opencode-mascot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sl1097643327git/opencode-mascot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sl1097643327git/opencode-mascot/issues"
+  },
+  "keywords": [
+    "opencode",
+    "mascot",
+    "electron",
+    "desktop",
+    "plugin"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm test && npm pack --dry-run"
+  },
+  "files": [
+    "assets/mascot/default/",
+    "docs/mascot-usage.md",
+    "docs/opencode插件快速接入.md",
+    "examples/",
+    "SECURITY.md",
+    "install-opencode-plugin.bat",
+    "install-opencode-plugin.sh",
+    "plugins/",
+    "scripts/",
+    "src/",
+    "start-mascot.bat",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7"
+  }
+}
