@@ -1,0 +1,13 @@
+node_modules/
+test/
+docs/superpowers/
+docs/opencode-mascot-plan.md
+docs/opencode-plugin-integration-design.md
+docs/发布前检查清单.md
+.git/
+.gitignore
+npm-debug.log*
+*.tmp
+*.log
+character-layout.json
+opencode-projects.json
