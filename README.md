@@ -4,6 +4,23 @@
 
 适合希望把 AI 工作流变得更直观、更有存在感的人：你可以把它当作一个能动起来的桌面状态面板，也可以把它接入自己的自动化流程、编辑器插件或本地工具链。
 
+## 内置形象预览
+
+仓库当前内置了可以直接使用的主题素材。为了方便在 GitHub 上快速感受风格，下面展示两个内置主题的静态预览。
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>default</strong><br />
+      <img src="assets/mascot/default/idle/ComfyUI_01084_.png" alt="default mascot preview" width="220" />
+    </td>
+    <td align="center">
+      <strong>succubus</strong><br />
+      <img src="assets/mascot/succubus/idle/ComfyUI_01392_.png" alt="succubus mascot preview" width="220" />
+    </td>
+  </tr>
+</table>
+
 ## 项目亮点
 
 - **桌面可视化 AI 状态**：把 `idle`、`working`、`thinking`、`typing`、`tool`、`permission`、`done`、`error` 等状态映射成角色动作。
@@ -257,22 +274,6 @@ assets/mascot/default/working/ComfyUI_01131_.png
 一个动作目录内可以放多张图，会按文件名自然排序播放。缺失状态会回退到同主题的 `idle`；如果 `idle` 也缺失，会显示内置占位图。
 
 当前仓库保留 `assets/mascot/default/` 下的默认大图素材，适合直接提交到 GitHub 展示真实效果。`reviewer` 等其他主题可以按同样目录结构自行添加。
-
-## 内置形象预览
-
-当前仓库内置了可直接使用的主题素材。下面用每个主题 `idle` 目录中的一张代表图做静态预览，方便在 GitHub 上快速查看大致风格。
-
-### `default`
-
-默认主题，适合直接开箱即用，也最适合用来验证动作切换、HTTP 控制和 opencode 联动是否工作正常。
-
-![default mascot preview](assets/mascot/default/idle/ComfyUI_01084_.png)
-
-### `succubus`
-
-风格更强、展示感更明显，适合想让桌面角色更有存在感的使用方式。
-
-![succubus mascot preview](assets/mascot/succubus/idle/ComfyUI_01392_.png)
 
 ## 如何添加形象
 
