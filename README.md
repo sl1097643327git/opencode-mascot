@@ -52,7 +52,7 @@ start-mascot.bat
 
 ### 我想接入 opencode
 
-先启动看板娘，再安装 opencode 插件：
+推荐直接安装 opencode 插件，然后启动或重启 opencode。正常情况下，不需要手动先启动看板娘；插件会在需要时自动拉起本地 mascot 服务。
 
 Windows：
 
@@ -94,13 +94,13 @@ chmod +x ./uninstall-opencode-plugin.sh
 node scripts/uninstall-opencode-plugin.js
 ```
 
-安装后重启 opencode，并检查连接状态：
+安装后启动或重启 opencode，并检查连接状态：
 
 - 安装脚本会自动补齐本项目依赖（缺失时执行 `npm install`）。
 - 安装脚本会自动把 mascot 插件写入全局 `opencode.json` 的 `plugin` 列表。
 - 安装脚本会显示分阶段进度，例如检查 Electron、安装依赖、校验二进制、复制插件文件和写入配置。
 - 安装脚本在未显式配置镜像时，会默认使用国内可访问的 Electron 镜像下载二进制。
-- 正常情况下，只要安装脚本顺利完成，重启 opencode 后看板娘就应自动加载，不需要再手动改插件配置。
+- 正常情况下，只要安装脚本顺利完成，启动或重启 opencode 后看板娘就应自动加载，不需要手动先启动 mascot，也不需要再手动改插件配置。
 
 默认情况下，安装脚本会自动使用：
 
@@ -175,16 +175,9 @@ http://127.0.0.1:17890
 
 ### 方式一：opencode 插件
 
-适合想让每个 opencode 窗口自动生成项目看板娘，并自动跟随 AI 状态切换动作的人。
+适合想让每个 opencode 窗口自动生成项目看板娘，并自动跟随 AI 状态切换动作的人。这也是推荐的默认使用方式。
 
-1. 先启动看板娘（如果你已经按顶部“快速入口”做过，这里可以直接跳到下一步）：
-
-   ```powershell
-   npm install
-   npm start
-   ```
-
-2. 安装 opencode 插件：
+1. 安装 opencode 插件：
 
    Windows：
 
@@ -205,7 +198,7 @@ http://127.0.0.1:17890
    node scripts/install-opencode-plugin.js
    ```
 
-3. 重启 opencode。安装脚本已经自动准备依赖并补齐插件配置；插件会连接本地看板娘服务，并为 opencode 项目创建/更新角色。
+2. 启动或重启 opencode。安装脚本已经自动准备依赖并补齐插件配置；插件会在本地 mascot 服务未运行时自动拉起它，并为 opencode 项目创建/更新角色。
 
 检查插件是否连接：
 
@@ -293,7 +286,7 @@ node scripts/install-opencode-plugin.js
 - 在控制台输出当前安装阶段，方便判断是否卡在 Electron 下载阶段
 - 在未手动指定镜像时，默认使用 `https://npmmirror.com/mirrors/electron/` 下载 Electron 二进制
 
-正常情况下，只要安装脚本顺利完成，安装后只需要重启 opencode；如果没有自动出现，再检查 `npm install` 输出、`~/.config/opencode/opencode.json` 和 `~/.config/opencode/mascot.json`。
+正常情况下，只要安装脚本顺利完成，安装后只需要启动或重启 opencode；如果没有自动出现，再检查 `npm install` 输出、`~/.config/opencode/opencode.json` 和 `~/.config/opencode/mascot.json`。
 
 如果安装过程长时间停在 `Installing mascot dependencies with npm install...`，通常不是脚本死锁，而是 Electron 二进制下载较慢或被网络拦截。此时优先尝试：
 

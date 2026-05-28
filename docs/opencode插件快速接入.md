@@ -1,6 +1,6 @@
 # opencode 插件快速接入
 
-这份文档只讲最快把 opencode 接入桌面看板娘的步骤。看板娘本体是独立服务，opencode 插件只是可选接入层。
+这份文档只讲最快把 opencode 接入桌面看板娘的步骤。推荐路径是：安装插件后直接启动或重启 opencode，让插件自动拉起看板娘；手动启动 mascot 只作为排障或独立使用时的补充方式。
 
 ## 1. 前置条件
 
@@ -129,7 +129,11 @@ C:\Users\<你的用户名>\.config\opencode\mascot.json
 
 这样你以后重装时还可以继续沿用原来的用户设置。
 
-## 3. 启动看板娘
+## 3. 启动或重启 opencode
+
+安装完成后，优先直接启动或重启 opencode。正常情况下，只要 `autoStart: true` 且本地 mascot 服务尚未运行，插件会自动执行 `startCommand` 拉起看板娘，不需要手动先运行 `start-mascot.bat` 或 `npm start`。
+
+如果你想手动排障，再使用下面这些命令。
 
 Windows 可以手动启动：
 
@@ -143,7 +147,7 @@ macOS / Linux 可以手动启动：
 npm start
 ```
 
-也可以不手动启动。配置里 `autoStart: true` 时，插件发现看板娘服务不可用，会自动执行 `startCommand` 尝试拉起。
+如果你不手动启动，配置里 `autoStart: true` 时，插件发现看板娘服务不可用，会自动执行 `startCommand` 尝试拉起。
 
 启动成功后浏览器打开：
 
@@ -169,7 +173,7 @@ MascotPlugin
 C:\Users\<你的用户名>\.config\opencode\plugins\mascot.js
 ```
 
-安装脚本已经把插件安装到全局插件目录，并尝试写入全局 `opencode.json` 的 `plugin` 列表。大多数情况下，只要安装脚本顺利完成，直接重启 opencode 即可。
+安装脚本已经把插件安装到全局插件目录，并尝试写入全局 `opencode.json` 的 `plugin` 列表。大多数情况下，只要安装脚本顺利完成，直接启动或重启 opencode 即可。
 
 如果你的 opencode 使用了不同于 `plugin` 列表的加载机制，或者你想手工复核，全局配置通常在：
 
