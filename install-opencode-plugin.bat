@@ -33,7 +33,8 @@ if errorlevel 1 (
 
 echo.
 echo [OK] opencode mascot plugin installed.
-echo [INFO] Restart opencode or load the plugin from your opencode config.
+echo [INFO] Dependencies and opencode plugin config have been prepared.
+echo [INFO] If installation completed successfully, restart opencode and the mascot should load automatically.
 pause
 
 endlocal

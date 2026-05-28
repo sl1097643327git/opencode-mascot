@@ -7,7 +7,7 @@ const test = require('node:test');
 const pluginModule = require('../plugins/opencode-mascot');
 const MascotPlugin = pluginModule.server;
 const { createMascotPlugin, normalizeConfig, startMascot } = require('../plugins/opencode-mascot-core.cjs');
-const { createStartConfig, install } = require('../scripts/install-opencode-plugin');
+const { createStartConfig, install, ensurePluginConfigured, installDependenciesIfNeeded } = require('../scripts/install-opencode-plugin');
 const { launch } = require('../scripts/launch-mascot-detached');
 
 function createTempDir() {
@@ -202,4 +202,112 @@ test('install copies plugin and creates default config without overwriting exist
   assert.equal(fs.existsSync(first.coreTarget), true);
   assert.equal(first.target, second.target);
   assert.equal(fs.readFileSync(second.configPath, 'utf8'), existing);
+});
+
+test('ensurePluginConfigured creates opencode.json with mascot plugin when missing', () => {
+  const tempHome = createTempDir();
+  const result = ensurePluginConfigured({
+    homeDir: tempHome,
+    pluginModulePath: 'C:\\Users\\demo\\.config\\opencode\\plugins\\mascot.js'
+  });
+
+  const configPath = path.join(tempHome, '.config', 'opencode', 'opencode.json');
+  const saved = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  assert.equal(result.updated, true);
+  assert.deepEqual(saved.plugin, ['C:\\Users\\demo\\.config\\opencode\\plugins\\mascot.js']);
+});
+
+test('ensurePluginConfigured appends mascot plugin without removing existing plugin entries', () => {
+  const tempHome = createTempDir();
+  const configDir = path.join(tempHome, '.config', 'opencode');
+  const configPath = path.join(configDir, 'opencode.json');
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(configPath, `${JSON.stringify({ plugin: ['existing-plugin.js'] }, null, 2)}\n`);
+
+  const result = ensurePluginConfigured({
+    homeDir: tempHome,
+    pluginModulePath: 'C:\\Users\\demo\\.config\\opencode\\plugins\\mascot.js'
+  });
+
+  const saved = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  assert.equal(result.updated, true);
+  assert.deepEqual(saved.plugin, ['existing-plugin.js', 'C:\\Users\\demo\\.config\\opencode\\plugins\\mascot.js']);
+});
+
+test('ensurePluginConfigured does not duplicate mascot plugin entry', () => {
+  const tempHome = createTempDir();
+  const configDir = path.join(tempHome, '.config', 'opencode');
+  const configPath = path.join(configDir, 'opencode.json');
+  const pluginModulePath = 'C:\\Users\\demo\\.config\\opencode\\plugins\\mascot.js';
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(configPath, `${JSON.stringify({ plugin: [pluginModulePath] }, null, 2)}\n`);
+
+  const result = ensurePluginConfigured({ homeDir: tempHome, pluginModulePath });
+  const saved = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  assert.equal(result.updated, false);
+  assert.deepEqual(saved.plugin, [pluginModulePath]);
+});
+
+test('ensurePluginConfigured fails without overwriting malformed opencode.json', () => {
+  const tempHome = createTempDir();
+  const configDir = path.join(tempHome, '.config', 'opencode');
+  const configPath = path.join(configDir, 'opencode.json');
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(configPath, '{ invalid json\n');
+
+  assert.throws(
+    () => ensurePluginConfigured({
+      homeDir: tempHome,
+      pluginModulePath: 'C:\\Users\\demo\\.config\\opencode\\plugins\\mascot.js'
+    }),
+    /opencode\.json/i
+  );
+  assert.equal(fs.readFileSync(configPath, 'utf8'), '{ invalid json\n');
+});
+
+test('installDependenciesIfNeeded skips install when Electron binary already exists', () => {
+  const tempRoot = createTempDir();
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+  fs.writeFileSync(electronBin, '');
+  const calls = [];
+
+  const result = installDependenciesIfNeeded({
+    projectRoot: tempRoot,
+    spawnSyncImpl: (...args) => {
+      calls.push(args);
+      return { status: 0 };
+    }
+  });
+
+  assert.equal(result.installed, false);
+  assert.equal(calls.length, 0);
+});
+
+test('installDependenciesIfNeeded runs npm install when Electron binary is missing', () => {
+  const tempRoot = createTempDir();
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  const calls = [];
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+
+  const result = installDependenciesIfNeeded({
+    projectRoot: tempRoot,
+    spawnSyncImpl: (command, args, options) => {
+      calls.push({ command, args, options });
+      fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+      fs.writeFileSync(electronBin, '');
+      return { status: 0, stdout: '', stderr: '' };
+    }
+  });
+
+  assert.equal(result.installed, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, process.platform === 'win32' ? 'npm.cmd' : 'npm');
+  assert.deepEqual(calls[0].args, ['install']);
+  assert.equal(calls[0].options.cwd, tempRoot);
 });
