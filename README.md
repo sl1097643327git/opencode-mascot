@@ -98,7 +98,31 @@ node scripts/uninstall-opencode-plugin.js
 
 - 安装脚本会自动补齐本项目依赖（缺失时执行 `npm install`）。
 - 安装脚本会自动把 mascot 插件写入全局 `opencode.json` 的 `plugin` 列表。
+- 安装脚本会显示分阶段进度，例如检查 Electron、安装依赖、校验二进制、复制插件文件和写入配置。
+- 安装脚本在未显式配置镜像时，会默认使用国内可访问的 Electron 镜像下载二进制。
 - 正常情况下，只要安装脚本顺利完成，重启 opencode 后看板娘就应自动加载，不需要再手动改插件配置。
+
+默认情况下，安装脚本会自动使用：
+
+```powershell
+$env:ELECTRON_MIRROR='https://npmmirror.com/mirrors/electron/'
+$env:ELECTRON_CUSTOM_DIR='{{ version }}'
+```
+
+如果你想改成自己的腾讯云、阿里云、公司内网镜像，也可以在运行安装脚本前手动覆盖。例如 PowerShell：
+
+```powershell
+$env:ELECTRON_MIRROR='https://your-mirror.example.com/electron/'
+$env:ELECTRON_CUSTOM_DIR='{{ version }}'
+```
+
+如果你的网络环境需要代理，也可以在同一个终端里一起设置：
+
+```powershell
+$env:ELECTRON_GET_USE_PROXY='1'
+$env:HTTPS_PROXY='http://127.0.0.1:7890'
+$env:HTTP_PROXY='http://127.0.0.1:7890'
+```
 
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
@@ -266,8 +290,26 @@ node scripts/install-opencode-plugin.js
 
 - 在缺少 Electron 运行依赖时自动执行一次 `npm install`
 - 自动把 `~/.config/opencode/plugins/mascot.js` 加入 `~/.config/opencode/opencode.json` 的 `plugin` 列表
+- 在控制台输出当前安装阶段，方便判断是否卡在 Electron 下载阶段
+- 在未手动指定镜像时，默认使用 `https://npmmirror.com/mirrors/electron/` 下载 Electron 二进制
 
 正常情况下，只要安装脚本顺利完成，安装后只需要重启 opencode；如果没有自动出现，再检查 `npm install` 输出、`~/.config/opencode/opencode.json` 和 `~/.config/opencode/mascot.json`。
+
+如果安装过程长时间停在 `Installing mascot dependencies with npm install...`，通常不是脚本死锁，而是 Electron 二进制下载较慢或被网络拦截。此时优先尝试：
+
+```powershell
+# 默认已经会自动使用 npmmirror；如果你要覆盖成自定义镜像，可手动指定：
+$env:ELECTRON_MIRROR='https://your-mirror.example.com/electron/'
+$env:ELECTRON_CUSTOM_DIR='{{ version }}'
+$env:ELECTRON_GET_USE_PROXY='1'
+```
+
+如果公司网络需要代理，再补：
+
+```powershell
+$env:HTTPS_PROXY='http://127.0.0.1:7890'
+$env:HTTP_PROXY='http://127.0.0.1:7890'
+```
 
 卸载脚本会删除：
 

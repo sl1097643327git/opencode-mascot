@@ -378,3 +378,136 @@ test('installDependenciesIfNeeded falls back to npm cli through node when npm co
     }
   }
 });
+
+test('installDependenciesIfNeeded reports friendly progress and mirror guidance before npm install', () => {
+  const tempRoot = createTempDir();
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  let output = '';
+
+  installDependenciesIfNeeded({
+    projectRoot: tempRoot,
+    io: {
+      stdout: {
+        write(chunk) {
+          output += chunk;
+        }
+      }
+    },
+    spawnSyncImpl: () => {
+      fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+      fs.writeFileSync(electronBin, '');
+      return { status: 0 };
+    }
+  });
+
+  assert.match(output, /Step 1\/3: checking Electron runtime/i);
+  assert.match(output, /Step 2\/3: installing npm dependencies/i);
+  assert.match(output, /Using default Electron mirror/i);
+  assert.match(output, /npmmirror\.com\/mirrors\/electron/i);
+  assert.match(output, /Step 3\/3: verifying Electron binary/i);
+});
+
+test('installDependenciesIfNeeded passes mirror and proxy environment through npm install', () => {
+  const tempRoot = createTempDir();
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  const originalMirror = process.env.ELECTRON_MIRROR;
+  const originalCustomDir = process.env.ELECTRON_CUSTOM_DIR;
+  const originalUseProxy = process.env.ELECTRON_GET_USE_PROXY;
+  const originalRegistry = process.env.npm_config_registry;
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  const calls = [];
+
+  process.env.ELECTRON_MIRROR = 'https://npmmirror.example.com/mirrors/electron/';
+  process.env.ELECTRON_CUSTOM_DIR = '31.7.7';
+  process.env.ELECTRON_GET_USE_PROXY = '1';
+  process.env.npm_config_registry = 'https://registry.npmmirror.example.com/';
+
+  try {
+    installDependenciesIfNeeded({
+      projectRoot: tempRoot,
+      spawnSyncImpl: (command, args, options) => {
+        calls.push({ command, args, options });
+        fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+        fs.writeFileSync(electronBin, '');
+        return { status: 0 };
+      }
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].options.env.ELECTRON_MIRROR, 'https://npmmirror.example.com/mirrors/electron/');
+    assert.equal(calls[0].options.env.ELECTRON_CUSTOM_DIR, '31.7.7');
+    assert.equal(calls[0].options.env.ELECTRON_GET_USE_PROXY, '1');
+    assert.equal(calls[0].options.env.npm_config_registry, 'https://registry.npmmirror.example.com/');
+  } finally {
+    if (originalMirror === undefined) {
+      delete process.env.ELECTRON_MIRROR;
+    } else {
+      process.env.ELECTRON_MIRROR = originalMirror;
+    }
+
+    if (originalCustomDir === undefined) {
+      delete process.env.ELECTRON_CUSTOM_DIR;
+    } else {
+      process.env.ELECTRON_CUSTOM_DIR = originalCustomDir;
+    }
+
+    if (originalUseProxy === undefined) {
+      delete process.env.ELECTRON_GET_USE_PROXY;
+    } else {
+      process.env.ELECTRON_GET_USE_PROXY = originalUseProxy;
+    }
+
+    if (originalRegistry === undefined) {
+      delete process.env.npm_config_registry;
+    } else {
+      process.env.npm_config_registry = originalRegistry;
+    }
+  }
+});
+
+test('installDependenciesIfNeeded uses default domestic Electron mirror when no mirror is configured', () => {
+  const tempRoot = createTempDir();
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  const originalMirror = process.env.ELECTRON_MIRROR;
+  const originalCustomDir = process.env.ELECTRON_CUSTOM_DIR;
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  const calls = [];
+
+  try {
+    delete process.env.ELECTRON_MIRROR;
+    delete process.env.ELECTRON_CUSTOM_DIR;
+
+    installDependenciesIfNeeded({
+      projectRoot: tempRoot,
+      spawnSyncImpl: (command, args, options) => {
+        calls.push({ command, args, options });
+        fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+        fs.writeFileSync(electronBin, '');
+        return { status: 0 };
+      }
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].options.env.ELECTRON_MIRROR, 'https://npmmirror.com/mirrors/electron/');
+    assert.equal(calls[0].options.env.ELECTRON_CUSTOM_DIR, '{{ version }}');
+  } finally {
+    if (originalMirror === undefined) {
+      delete process.env.ELECTRON_MIRROR;
+    } else {
+      process.env.ELECTRON_MIRROR = originalMirror;
+    }
+
+    if (originalCustomDir === undefined) {
+      delete process.env.ELECTRON_CUSTOM_DIR;
+    } else {
+      process.env.ELECTRON_CUSTOM_DIR = originalCustomDir;
+    }
+  }
+});
