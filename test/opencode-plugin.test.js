@@ -61,13 +61,13 @@ test('launch starts npm detached from a project root and returns immediately', (
   assert.deepEqual(calls[1], { unref: true });
 });
 
-test('launch falls back to electron.cmd on Windows when electron.exe is missing', () => {
+test('launch falls back to node plus electron cli on Windows when electron.exe is missing', () => {
   const tempRoot = createTempDir();
   const originalPlatform = process.platform;
-  const electronCmd = path.join(tempRoot, 'node_modules', '.bin', 'electron.cmd');
+  const electronCli = path.join(tempRoot, 'node_modules', 'electron', 'cli.js');
   fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
-  fs.mkdirSync(path.dirname(electronCmd), { recursive: true });
-  fs.writeFileSync(electronCmd, '');
+  fs.mkdirSync(path.dirname(electronCli), { recursive: true });
+  fs.writeFileSync(electronCli, '');
   const calls = [];
 
   Object.defineProperty(process, 'platform', {
@@ -84,7 +84,8 @@ test('launch falls back to electron.cmd on Windows when electron.exe is missing'
     });
 
     assert.equal(result.ok, true);
-    assert.equal(calls[0].command, electronCmd);
+    assert.equal(calls[0].command, process.execPath);
+    assert.deepEqual(calls[0].args, [electronCli, '.']);
   } finally {
     Object.defineProperty(process, 'platform', {
       value: originalPlatform
@@ -339,6 +340,59 @@ test('installDependenciesIfNeeded skips install when Electron binary already exi
   assert.equal(calls.length, 0);
 });
 
+test('installDependenciesIfNeeded reports skipped dependency steps when Electron runtime already exists', () => {
+  const tempRoot = createTempDir();
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+  fs.writeFileSync(electronBin, '');
+  let output = '';
+
+  installDependenciesIfNeeded({
+    projectRoot: tempRoot,
+    io: {
+      stdout: {
+        write(chunk) {
+          output += chunk;
+        }
+      }
+    },
+    spawnSyncImpl: () => {
+      throw new Error('spawn should not be called when skipping install');
+    }
+  });
+
+  assert.match(output, /Step 1\/5: checking Electron runtime/i);
+  assert.match(output, /Step 2\/5: skipping npm dependency install because Electron runtime already exists/i);
+  assert.match(output, /Step 3\/5: skipping Electron verification because install was not needed/i);
+});
+
+test('installDependenciesIfNeeded does not skip install on Windows when only fallback shim exists', () => {
+  const tempRoot = createTempDir();
+  const fallbackBin = path.join(tempRoot, 'node_modules', '.bin', 'electron');
+  const electronBin = path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe');
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  fs.mkdirSync(path.dirname(fallbackBin), { recursive: true });
+  fs.writeFileSync(fallbackBin, '');
+  const calls = [];
+
+  const result = installDependenciesIfNeeded({
+    projectRoot: tempRoot,
+    platform: 'win32',
+    spawnSyncImpl: (command, args) => {
+      calls.push({ command, args });
+      fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+      fs.writeFileSync(electronBin, '');
+      return { status: 0 };
+    }
+  });
+
+  assert.equal(result.installed, true);
+  assert.equal(calls.length > 0, true);
+});
+
 test('installDependenciesIfNeeded runs npm install when Electron binary is missing', () => {
   const tempRoot = createTempDir();
   fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
@@ -455,11 +509,11 @@ test('installDependenciesIfNeeded reports friendly progress and mirror guidance 
     }
   });
 
-  assert.match(output, /Step 1\/3: checking Electron runtime/i);
-  assert.match(output, /Step 2\/3: installing npm dependencies/i);
+  assert.match(output, /Step 1\/5: checking Electron runtime/i);
+  assert.match(output, /Step 2\/5: installing npm dependencies/i);
   assert.match(output, /Using default Electron mirror/i);
   assert.match(output, /npmmirror\.com\/mirrors\/electron/i);
-  assert.match(output, /Step 3\/3: verifying Electron binary/i);
+  assert.match(output, /Step 3\/5: verifying Electron binary/i);
 });
 
 test('installDependenciesIfNeeded passes mirror and proxy environment through npm install', () => {

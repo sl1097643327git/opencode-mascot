@@ -18,6 +18,10 @@ function writeStep(io, current, total, message) {
   writeInfo(io, `[INFO] Step ${current}/${total}: ${message}`);
 }
 
+function writeSkippedStep(io, current, total, message) {
+  writeStep(io, current, total, `skipping ${message}`);
+}
+
 function forwardedInstallEnv(env = process.env) {
   const nextEnv = { ...env };
 
@@ -51,8 +55,6 @@ function forwardedInstallEnv(env = process.env) {
 }
 
 function reportMirrorGuidance(io, env = process.env) {
-  writeStep(io, 1, 3, 'checking Electron runtime...');
-
   if (env.ELECTRON_MIRROR) {
     writeInfo(io, `[INFO] Using Electron mirror: ${env.ELECTRON_MIRROR}`);
     if (env.ELECTRON_CUSTOM_DIR) {
@@ -96,12 +98,22 @@ function electronBinaryPath(projectRoot, platform = process.platform) {
     : path.join(projectRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
 }
 
-function fallbackElectronBinaryPath(projectRoot) {
-  return path.join(projectRoot, 'node_modules', '.bin', 'electron');
+function fallbackElectronBinaryPath(projectRoot, platform = process.platform) {
+  return platform === 'win32'
+    ? path.join(projectRoot, 'node_modules', '.bin', 'electron.cmd')
+    : path.join(projectRoot, 'node_modules', '.bin', 'electron');
 }
 
 function hasElectronBinary(projectRoot, platform = process.platform) {
-  return fs.existsSync(electronBinaryPath(projectRoot, platform)) || fs.existsSync(fallbackElectronBinaryPath(projectRoot));
+  if (fs.existsSync(electronBinaryPath(projectRoot, platform))) {
+    return true;
+  }
+
+  if (platform !== 'win32') {
+    return fs.existsSync(fallbackElectronBinaryPath(projectRoot, platform));
+  }
+
+  return fs.existsSync(path.join(projectRoot, 'node_modules', 'electron', 'cli.js'));
 }
 
 function installDependenciesIfNeeded({
@@ -111,12 +123,16 @@ function installDependenciesIfNeeded({
   io = process,
   env = process.env
 } = {}) {
+  writeStep(io, 1, 5, 'checking Electron runtime...');
+
   if (hasElectronBinary(projectRoot, platform)) {
+    writeSkippedStep(io, 2, 5, 'npm dependency install because Electron runtime already exists');
+    writeSkippedStep(io, 3, 5, 'Electron verification because install was not needed');
     return { installed: false };
   }
 
   reportMirrorGuidance(io, env);
-  writeStep(io, 2, 3, 'installing npm dependencies...');
+  writeStep(io, 2, 5, 'installing npm dependencies...');
   writeInfo(io, '[INFO] Installing mascot dependencies with npm install...');
   const attempts = [];
   let installed = false;
@@ -147,7 +163,7 @@ function installDependenciesIfNeeded({
     throw new Error(`npm install failed. Attempts:\n- ${attempts.join('\n- ')}`);
   }
 
-  writeStep(io, 3, 3, 'verifying Electron binary...');
+  writeStep(io, 3, 5, 'verifying Electron binary...');
   if (!hasElectronBinary(projectRoot, platform)) {
     throw new Error('Electron binary is still missing after npm install.');
   }

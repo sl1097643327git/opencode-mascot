@@ -15,10 +15,17 @@ function launch({ projectRoot = process.argv[2], spawnImpl = spawn } = {}) {
   const electronBin = process.platform === 'win32'
     ? path.join(resolvedRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
     : path.join(resolvedRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
-  const fallbackElectronBin = process.platform === 'win32'
-    ? path.join(resolvedRoot, 'node_modules', '.bin', 'electron.cmd')
-    : path.join(resolvedRoot, 'node_modules', '.bin', 'electron');
-  const command = fs.existsSync(electronBin) ? electronBin : fallbackElectronBin;
+  const electronCli = path.join(resolvedRoot, 'node_modules', 'electron', 'cli.js');
+  const fallbackElectronBin = path.join(resolvedRoot, 'node_modules', '.bin', 'electron');
+  const fallbackCommand = process.platform === 'win32'
+    ? (fs.existsSync(electronCli) ? process.execPath : null)
+    : (fs.existsSync(fallbackElectronBin) ? fallbackElectronBin : null);
+  const command = fs.existsSync(electronBin) ? electronBin : fallbackCommand;
+  const args = fs.existsSync(electronBin)
+    ? ['.']
+    : process.platform === 'win32'
+      ? [electronCli, '.']
+      : ['.'];
 
   if (!fs.existsSync(command)) {
     return { ok: false, code: 'MISSING_ELECTRON', message: `Electron binary not found at ${electronBin}. Run npm install first.` };
@@ -26,7 +33,7 @@ function launch({ projectRoot = process.argv[2], spawnImpl = spawn } = {}) {
 
   let child;
   try {
-    child = spawnImpl(command, ['.'], {
+    child = spawnImpl(command, args, {
       cwd: resolvedRoot,
       detached: true,
       stdio: 'ignore',
