@@ -31,26 +31,7 @@
 
 ## 快速入口
 
-### 我想先跑起来
-
-```powershell
-npm install
-npm start
-```
-
-启动后可打开：
-
-```text
-http://127.0.0.1:17890
-```
-
-Windows 也可以直接双击：
-
-```text
-start-mascot.bat
-```
-
-### 我想接入 opencode
+### 我想接入 opencode（推荐）
 
 推荐直接安装 opencode 插件，然后启动或重启 opencode。正常情况下，不需要手动先启动看板娘；插件会在需要时自动拉起本地 mascot 服务。
 
@@ -71,6 +52,31 @@ chmod +x ./install-opencode-plugin.sh
 
 ```sh
 node scripts/install-opencode-plugin.js
+```
+
+安装完成后，启动或重启 opencode，并检查连接状态：
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
+```
+
+### 我想单独手动跑起来
+
+```powershell
+npm install
+npm start
+```
+
+启动后可打开：
+
+```text
+http://127.0.0.1:17890
+```
+
+Windows 也可以直接双击：
+
+```text
+start-mascot.bat
 ```
 
 卸载插件：
