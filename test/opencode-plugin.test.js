@@ -61,6 +61,58 @@ test('launch starts npm detached from a project root and returns immediately', (
   assert.deepEqual(calls[1], { unref: true });
 });
 
+test('launch falls back to electron.cmd on Windows when electron.exe is missing', () => {
+  const tempRoot = createTempDir();
+  const originalPlatform = process.platform;
+  const electronCmd = path.join(tempRoot, 'node_modules', '.bin', 'electron.cmd');
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  fs.mkdirSync(path.dirname(electronCmd), { recursive: true });
+  fs.writeFileSync(electronCmd, '');
+  const calls = [];
+
+  Object.defineProperty(process, 'platform', {
+    value: 'win32'
+  });
+
+  try {
+    const result = launch({
+      projectRoot: tempRoot,
+      spawnImpl: (command, args, options) => {
+        calls.push({ command, args, options });
+        return { pid: 456, unref() { calls.push({ unref: true }); } };
+      }
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(calls[0].command, electronCmd);
+  } finally {
+    Object.defineProperty(process, 'platform', {
+      value: originalPlatform
+    });
+  }
+});
+
+test('launch returns a structured error when spawn throws asynchronously', () => {
+  const tempRoot = createTempDir();
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+  fs.writeFileSync(electronBin, '');
+
+  const result = launch({
+    projectRoot: tempRoot,
+    spawnImpl: () => {
+      throw Object.assign(new Error('spawn failed'), { code: 'ENOENT' });
+    }
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'SPAWN_FAILED');
+  assert.match(result.message, /spawn failed/i);
+});
+
 test('plugin sends hello, heartbeat, event, and disconnect envelopes', async () => {
   const tempDir = createTempDir();
   const configPath = path.join(tempDir, 'mascot.json');

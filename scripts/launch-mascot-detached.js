@@ -15,19 +15,31 @@ function launch({ projectRoot = process.argv[2], spawnImpl = spawn } = {}) {
   const electronBin = process.platform === 'win32'
     ? path.join(resolvedRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
     : path.join(resolvedRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
-  const fallbackElectronBin = path.join(resolvedRoot, 'node_modules', '.bin', 'electron');
+  const fallbackElectronBin = process.platform === 'win32'
+    ? path.join(resolvedRoot, 'node_modules', '.bin', 'electron.cmd')
+    : path.join(resolvedRoot, 'node_modules', '.bin', 'electron');
   const command = fs.existsSync(electronBin) ? electronBin : fallbackElectronBin;
 
   if (!fs.existsSync(command)) {
     return { ok: false, code: 'MISSING_ELECTRON', message: `Electron binary not found at ${electronBin}. Run npm install first.` };
   }
 
-  const child = spawnImpl(command, ['.'], {
-    cwd: resolvedRoot,
-    detached: true,
-    stdio: 'ignore',
-    windowsHide: true
-  });
+  let child;
+  try {
+    child = spawnImpl(command, ['.'], {
+      cwd: resolvedRoot,
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      code: 'SPAWN_FAILED',
+      message: error instanceof Error ? error.message : `Failed to spawn Electron from ${command}.`
+    };
+  }
+
   child.unref?.();
   return { ok: true, pid: child.pid, command, cwd: resolvedRoot };
 }
