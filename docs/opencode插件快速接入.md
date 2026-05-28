@@ -5,7 +5,6 @@
 ## 1. 前置条件
 
 - 已在本机安装并能运行 `opencode`。
-- 已安装项目依赖：`npm install`。
 - 当前目录是看板娘项目根目录：
 
 ```powershell
@@ -22,7 +21,7 @@ cd "D:\DESKTOP\我的应用\opencode\kanban"
 install-opencode-plugin.bat
 ```
 
-它会调用 Node 安装脚本，安装完成后会停在窗口里显示结果，方便确认是否成功。
+它会调用 Node 安装脚本，自动检查并补齐依赖、写入插件文件和全局 opencode 配置；安装完成后会停在窗口里显示结果，方便确认是否成功。
 
 也可以在 PowerShell 里运行：
 
@@ -49,15 +48,17 @@ Windows 如果想测试这个 `.sh`，需要 Git Bash、WSL 或其他 POSIX shel
 node scripts/install-opencode-plugin.js
 ```
 
-脚本会做两件事：
+脚本会做这些事：
 
-1. 复制插件文件到 opencode 全局插件目录：
+1. 如果本项目依赖还没装好，自动执行一次 `npm install`，确保后续自动拉起能找到 Electron。
+
+2. 复制插件文件到 opencode 全局插件目录：
 
 ```text
 C:\Users\<你的用户名>\.config\opencode\plugins\mascot.js
 ```
 
-2. 如果配置不存在，创建：
+3. 如果配置不存在，创建：
 
 ```text
 C:\Users\<你的用户名>\.config\opencode\mascot.json
@@ -75,6 +76,18 @@ C:\Users\<你的用户名>\.config\opencode\mascot.json
 }
 ```
 
+4. 自动把插件模块写入全局：
+
+```text
+C:\Users\<你的用户名>\.config\opencode\opencode.json
+```
+
+会确保 `plugin` 列表里包含：
+
+```text
+C:\Users\<你的用户名>\.config\opencode\plugins\mascot.js
+```
+
 macOS / Linux 下默认配置会使用：
 
 ```json
@@ -83,9 +96,38 @@ macOS / Linux 下默认配置会使用：
 }
 ```
 
-也就是说：macOS 理论上支持 opencode 插件接入；只要这个 Electron 项目能在 macOS 上 `npm install`、`npm start` 正常启动，插件就可以用同一套 HTTP 协议接入。
+也就是说：macOS 理论上支持 opencode 插件接入；只要这个 Electron 项目能在 macOS 上正常安装依赖并启动，插件就可以用同一套 HTTP 协议接入。
 
 自动拉起时不会直接运行 `start-mascot.bat` 或 `npm start`。插件会先调用 `scripts/launch-mascot-detached.js`，再由这个启动器以 detached 方式启动本地 Electron 二进制，避免 opencode 或安装验证命令被前台控制台进程卡住。
+
+### 2.4 卸载插件
+
+Windows：
+
+```powershell
+.\uninstall-opencode-plugin.bat
+```
+
+macOS / Linux：
+
+```sh
+chmod +x ./uninstall-opencode-plugin.sh
+./uninstall-opencode-plugin.sh
+```
+
+通用命令：
+
+```powershell
+node scripts/uninstall-opencode-plugin.js
+```
+
+卸载脚本会删除插件文件和 `opencode.json` 里的 mascot 插件条目，但默认保留：
+
+```text
+C:\Users\<你的用户名>\.config\opencode\mascot.json
+```
+
+这样你以后重装时还可以继续沿用原来的用户设置。
 
 ## 3. 启动看板娘
 
@@ -127,15 +169,15 @@ MascotPlugin
 C:\Users\<你的用户名>\.config\opencode\plugins\mascot.js
 ```
 
-如果你的 opencode 版本会自动扫描全局插件目录，重启 opencode 即可。
+安装脚本已经把插件安装到全局插件目录，并尝试写入全局 `opencode.json` 的 `plugin` 列表。大多数情况下，只要安装脚本顺利完成，直接重启 opencode 即可。
 
-如果你的 opencode 使用 `opencode.json` 的 `plugin` 配置，请把这个插件模块加入全局配置。全局配置通常在：
+如果你的 opencode 使用了不同于 `plugin` 列表的加载机制，或者你想手工复核，全局配置通常在：
 
 ```text
 C:\Users\<你的用户名>\.config\opencode\opencode.json
 ```
 
-> 注意：不同 opencode 版本的插件加载配置可能略有差异；本项目已经把插件安装到官方全局插件目录，优先按你的 opencode 版本支持的方式加载该文件。
+> 注意：不同 opencode 版本的插件加载配置可能略有差异；本项目安装脚本已经优先处理官方全局插件目录和常见的 `plugin` 列表写法，手工配置仅作为兼容性兜底。另外，若现有 `opencode.json` 不是合法 JSON，安装器会停止并提示你先修复配置，避免覆盖旧文件。
 
 ## 5. 验证是否接入成功
 
@@ -282,7 +324,7 @@ C:\Users\<你的用户名>\.config\opencode\mascot.json
 C:\Users\<你的用户名>\.config\opencode\plugins\mascot.js
 ```
 
-如果你的 opencode 版本不自动扫描全局插件目录，需要在全局 `opencode.json` 里显式配置插件模块。
+先检查 `C:\Users\<你的用户名>\.config\opencode\opencode.json` 里的 `plugin` 列表是否已经包含 `mascot.js`。安装脚本默认会自动写入；只有你的 opencode 版本使用了不同配置机制时，才需要手工补齐。
 
 ### 9.3 旧角色没有自动消失
 
@@ -324,6 +366,8 @@ Get-NetTCPConnection -LocalPort 17890 -ErrorAction SilentlyContinue
 | `scripts/install-opencode-plugin.js` | 安装插件到 opencode 全局目录 |
 | `install-opencode-plugin.bat` | Windows 双击安装插件 |
 | `install-opencode-plugin.sh` | macOS / Linux 一键安装插件 |
+| `uninstall-opencode-plugin.bat` | Windows 双击卸载插件 |
+| `uninstall-opencode-plugin.sh` | macOS / Linux 一键卸载插件 |
 | `src/integrations/opencode.js` | 看板娘服务内的 opencode adapter |
 | `docs/mascot-usage.md` | 完整看板娘使用说明 |
 | `start-mascot.bat` | 启动看板娘 |

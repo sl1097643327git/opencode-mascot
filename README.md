@@ -73,7 +73,32 @@ chmod +x ./install-opencode-plugin.sh
 node scripts/install-opencode-plugin.js
 ```
 
+卸载插件：
+
+Windows：
+
+```powershell
+.\uninstall-opencode-plugin.bat
+```
+
+macOS/Linux：
+
+```sh
+chmod +x ./uninstall-opencode-plugin.sh
+./uninstall-opencode-plugin.sh
+```
+
+通用命令：
+
+```sh
+node scripts/uninstall-opencode-plugin.js
+```
+
 安装后重启 opencode，并检查连接状态：
+
+- 安装脚本会自动补齐本项目依赖（缺失时执行 `npm install`）。
+- 安装脚本会自动把 mascot 插件写入全局 `opencode.json` 的 `plugin` 列表。
+- 正常情况下，只要安装脚本顺利完成，重启 opencode 后看板娘就应自动加载，不需要再手动改插件配置。
 
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
@@ -156,7 +181,7 @@ http://127.0.0.1:17890
    node scripts/install-opencode-plugin.js
    ```
 
-3. 重启 opencode。插件会连接本地看板娘服务，并为 opencode 项目创建/更新角色。
+3. 重启 opencode。安装脚本已经自动准备依赖并补齐插件配置；插件会连接本地看板娘服务，并为 opencode 项目创建/更新角色。
 
 检查插件是否连接：
 
@@ -237,7 +262,20 @@ node scripts/install-opencode-plugin.js
 ~/.config/opencode/mascot.json
 ```
 
-安装后重启 opencode 或按你的 opencode 配置方式加载插件。
+安装脚本还会：
+
+- 在缺少 Electron 运行依赖时自动执行一次 `npm install`
+- 自动把 `~/.config/opencode/plugins/mascot.js` 加入 `~/.config/opencode/opencode.json` 的 `plugin` 列表
+
+正常情况下，只要安装脚本顺利完成，安装后只需要重启 opencode；如果没有自动出现，再检查 `npm install` 输出、`~/.config/opencode/opencode.json` 和 `~/.config/opencode/mascot.json`。
+
+卸载脚本会删除：
+
+- `~/.config/opencode/plugins/mascot.js`
+- `~/.config/opencode/plugins/opencode-mascot-core.cjs`
+- `~/.config/opencode/opencode.json` 里的 mascot 插件条目
+
+默认**不会删除** `~/.config/opencode/mascot.json`，这样以后重装时可以继续沿用你的用户设置。
 
 ## 常用命令
 
@@ -323,7 +361,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:17890/status"
 3. 确认 `assets/mascot/<theme>/idle/` 或当前状态目录里有图片；缺失时会回退到 `idle`，再缺失会显示内置占位图。
 4. 角色可能被拖到屏幕边缘或屏幕外，重启后会根据当前工作区夹回可见范围。
 5. Windows 可用 `start-mascot.bat` 重新启动；脚本会先关闭同项目旧 Electron 进程。
-6. 如果通过 opencode 自动拉起，确认已执行 `npm install`，否则 detached 启动器找不到 Electron 二进制。
+6. 如果通过安装脚本安装，依赖通常已经自动准备完成；只有你跳过安装脚本、直接手动复制插件文件时，才需要自己先执行 `npm install`。
 7. 打开开发者工具时如果看到 `window.mascotApi` 相关错误，说明 Electron preload 没有正确加载，需要用 `npm start` 或项目脚本启动，不要直接打开 `src/index.html`。
 
 ### opencode 没有生成项目角色
