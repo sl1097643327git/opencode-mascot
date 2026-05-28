@@ -311,3 +311,70 @@ test('installDependenciesIfNeeded runs npm install when Electron binary is missi
   assert.deepEqual(calls[0].args, ['install']);
   assert.equal(calls[0].options.cwd, tempRoot);
 });
+
+test('installDependenciesIfNeeded surfaces spawn errors from npm install', () => {
+  const tempRoot = createTempDir();
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  const originalNpmExecPath = process.env.npm_execpath;
+  process.env.npm_execpath = 'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js';
+
+  try {
+    assert.throws(
+      () => installDependenciesIfNeeded({
+        projectRoot: tempRoot,
+        spawnSyncImpl: () => ({
+          status: null,
+          error: new Error('spawn npm.cmd ENOENT')
+        })
+      }),
+      /Attempts:[\s\S]*spawn npm\.cmd ENOENT|Attempts:[\s\S]*spawn npm ENOENT/
+    );
+  } finally {
+    if (originalNpmExecPath === undefined) {
+      delete process.env.npm_execpath;
+    } else {
+      process.env.npm_execpath = originalNpmExecPath;
+    }
+  }
+});
+
+test('installDependenciesIfNeeded falls back to npm cli through node when npm command is unavailable', () => {
+  const tempRoot = createTempDir();
+  fs.writeFileSync(path.join(tempRoot, 'package.json'), '{}');
+  const originalNpmExecPath = process.env.npm_execpath;
+  const fallbackCli = 'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js';
+  process.env.npm_execpath = fallbackCli;
+  const calls = [];
+  const electronBin = process.platform === 'win32'
+    ? path.join(tempRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(tempRoot, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+
+  try {
+    const result = installDependenciesIfNeeded({
+      projectRoot: tempRoot,
+      spawnSyncImpl: (command, args, options) => {
+        calls.push({ command, args, options });
+        if (calls.length === 1) {
+          return { status: null, error: new Error('spawn npm.cmd ENOENT') };
+        }
+
+        fs.mkdirSync(path.dirname(electronBin), { recursive: true });
+        fs.writeFileSync(electronBin, '');
+        return { status: 0 };
+      }
+    });
+
+    assert.equal(result.installed, true);
+    assert.equal(calls.length >= 2, true);
+    assert.equal(calls[0].command, process.platform === 'win32' ? 'npm.cmd' : 'npm');
+    assert.equal(calls[1].command, process.execPath);
+    assert.deepEqual(calls[1].args, [fallbackCli, 'install']);
+    assert.equal(calls[1].options.cwd, tempRoot);
+  } finally {
+    if (originalNpmExecPath === undefined) {
+      delete process.env.npm_execpath;
+    } else {
+      process.env.npm_execpath = originalNpmExecPath;
+    }
+  }
+});

@@ -3,6 +3,27 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
+function uniqueEntries(values) {
+  return values.filter((value, index) => value && values.indexOf(value) === index);
+}
+
+function npmCliCandidates(platform = process.platform) {
+  const nodeDir = path.dirname(process.execPath);
+  const directCommand = platform === 'win32' ? 'npm.cmd' : 'npm';
+  const envCliPath = process.env.npm_execpath;
+  const bundledCliPath = path.join(nodeDir, 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  const candidates = [{ command: directCommand, args: ['install'] }];
+
+  for (const cliPath of uniqueEntries([envCliPath, bundledCliPath])) {
+    candidates.push({
+      command: process.execPath,
+      args: [cliPath, 'install']
+    });
+  }
+
+  return candidates;
+}
+
 function createStartConfig(projectRoot, platform = process.platform) {
   void platform;
   return {
@@ -34,15 +55,32 @@ function installDependenciesIfNeeded({
     return { installed: false };
   }
 
-  const npmCommand = platform === 'win32' ? 'npm.cmd' : 'npm';
   io.stdout.write('[INFO] Installing mascot dependencies with npm install...\n');
-  const result = spawnSyncImpl(npmCommand, ['install'], {
-    cwd: projectRoot,
-    stdio: 'inherit'
-  });
+  const attempts = [];
+  let installed = false;
 
-  if (result.status !== 0) {
-    throw new Error(`npm install failed with exit code ${result.status ?? 'unknown'}`);
+  for (const candidate of npmCliCandidates(platform)) {
+    const result = spawnSyncImpl(candidate.command, candidate.args, {
+      cwd: projectRoot,
+      stdio: 'inherit'
+    });
+
+    if (result.error) {
+      attempts.push(`${candidate.command} ${candidate.args.join(' ')}: ${result.error.message}`);
+      continue;
+    }
+
+    if (result.status !== 0) {
+      attempts.push(`${candidate.command} ${candidate.args.join(' ')}: exit code ${result.status ?? 'unknown'}`);
+      continue;
+    }
+
+    installed = true;
+    break;
+  }
+
+  if (!installed) {
+    throw new Error(`npm install failed. Attempts:\n- ${attempts.join('\n- ')}`);
   }
 
   if (!hasElectronBinary(projectRoot, platform)) {
@@ -147,6 +185,7 @@ module.exports = {
   electronBinaryPath,
   fallbackElectronBinaryPath,
   hasElectronBinary,
+  npmCliCandidates,
   installDependenciesIfNeeded,
   ensurePluginConfigured,
   install,
