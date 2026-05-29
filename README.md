@@ -158,55 +158,15 @@ Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
 
 ## 安装与启动
 
-如果你只是想尽快启动一次，直接看上面的“快速入口”即可。这里保留完整的基础启动说明。
+如果你只是想尽快开始，直接看上面的“快速入口”即可。这里不再重复展开。
 
-```powershell
-npm install
-npm start
-```
-
-Windows 也可以双击：
-
-```text
-start-mascot.bat
-```
-
-启动后打开控制台：
-
-```text
-http://127.0.0.1:17890
-```
-
-## 快速使用
+## 进阶使用
 
 ### 方式一：opencode 插件
 
-适合想让每个 opencode 窗口自动生成项目看板娘，并自动跟随 AI 状态切换动作的人。这也是推荐的默认使用方式。
+适合想让每个 opencode 窗口自动生成项目看板娘，并自动跟随 AI 状态切换动作的人。这也是推荐的默认使用方式。更完整的接入说明见：`docs/opencode插件快速接入.md`。
 
-1. 安装 opencode 插件：
-
-   Windows：
-
-   ```powershell
-   .\install-opencode-plugin.bat
-   ```
-
-   macOS/Linux：
-
-   ```sh
-   chmod +x ./install-opencode-plugin.sh
-   ./install-opencode-plugin.sh
-   ```
-
-   通用命令：
-
-   ```sh
-   node scripts/install-opencode-plugin.js
-   ```
-
-2. 启动或重启 opencode。安装脚本已经自动准备依赖并补齐插件配置；插件会在本地 mascot 服务未运行时自动拉起它，并为 opencode 项目创建/更新角色。
-
-检查插件是否连接：
+常用检查命令：
 
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
@@ -214,42 +174,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:17890/opencode/state"
 
 ### 方式二：通用 API / CLI
 
-适合把看板娘接入其他工具、脚本或自己的自动化流程。
-
-1. 启动看板娘：
-
-   ```powershell
-   npm start
-   ```
-
-2. 查看当前状态：
-
-   ```powershell
-   Invoke-RestMethod -Uri "http://127.0.0.1:17890/status"
-   ```
-
-3. 用 CLI 或 HTTP API 控制角色：
-
-   ```powershell
-   # 切换所有可见角色动作
-   node scripts/mascot-status.js working
-
-   # 切换单个角色动作
-   node scripts/mascot-status.js error --character assistant
-
-   # 显示/隐藏角色
-   node scripts/mascot-character.js show assistant
-   node scripts/mascot-character.js hide reviewer
-   ```
-
-   ```powershell
-   # HTTP API 示例：切换所有可见角色到 working
-   Invoke-RestMethod `
-     -Method Post `
-     -Uri "http://127.0.0.1:17890/status" `
-     -ContentType "application/json" `
-     -Body '{"status":"working"}'
-   ```
+适合把看板娘接入其他工具、脚本或自己的自动化流程。完整 API 与使用说明见：`docs/mascot-usage.md`。
 
 ## 安装 opencode 插件
 
